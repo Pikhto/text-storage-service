@@ -1,0 +1,60 @@
+openapi: 3.0.0
+info:
+  title: Text Storage API
+  version: 1.0.0
+
+paths:
+  /api/text/store:
+    post:
+      summary: Store text fragment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TextFragment'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TextFragmentResponse'
+
+components:
+  schemas:
+    TextFragment:
+      type: object
+      required:
+        - text
+        - author
+        - source
+      properties:
+        text:
+          type: string
+          description: The text to be stored
+        author:
+          type: string
+          description: The author of the text fragment
+        source:
+          type: string
+          description: The source of the text fragment
+    TextFragmentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the stored text fragment
+        text:
+          type: string
+          description: The stored text fragment
+        author:
+          type: string
+          description: The author of the text fragment
+        source:
+          type: string
+          description: The source of the text fragment
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the text fragment was stored
