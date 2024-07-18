@@ -1,0 +1,110 @@
+openapi: 3.0.0
+
+info:
+  title: Access Control API
+  description: API for managing access rights to saved text fragments
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5000
+    description: local development server
+  - url: https://textdrop.com
+    description: main production server
+  - url: https://textdrop-staging.com
+    description: staging server for testing purposes only
+
+paths:
+  api/access/grant:
+    post:
+      operationId: accessControl
+      summary: Confirming and granting access authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccessGrantRequest'
+      responses:
+        '200':
+          description: Access granted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessGrantResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized access
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Insufficient rights to the requested resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: Server internal error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          oneOf:
+            - type: string
+            - type: array
+
+    AccessGrantRequest:
+      type: object
+      required:
+        - text_id
+        - user_id
+        - permission
+      properties:
+        text_id:
+          type: string
+          description: Text fragment ID
+        user_id:
+          type: string
+          format: uuid
+          description: ID of the user to whom access is granted
+        permission:
+          type: string
+          description: Access level (e.g. “read”, “write”)
+
+    AccessGrantResponse:
+      type: object
+      required:
+        - access_granted
+      properties:
+        access_granted:
+          type: boolean
+          description: Indicates if access is granted
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the text fragment was stored
