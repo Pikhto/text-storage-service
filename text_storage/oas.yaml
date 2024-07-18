@@ -3,9 +3,18 @@ info:
   title: Text Storage API
   version: 1.0.0
 
+servers:
+  - url: http://localhost:8000
+    description: local development server
+  - url: https://textdrop.com
+    description: main production server
+  - url: https://textdrop-staging.com
+    description: staging server for testing purposes only
+
 paths:
   /api/text/store:
     post:
+      operationId: storeText
       summary: Store text fragment
       requestBody:
         required: true
@@ -20,15 +29,84 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TextFragmentResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /api/text/retrieve:
+    get:
+      operationId: retrieveText
+      summary: Searches the texts by IDS
+      parameters:
+        - name: text_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TextFragmentResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
 
 components:
+  responses:
+    NotFound:
+      description: The specified resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: The specified resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnprocessableEntity:
+      description: The payload contains invalid values.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  securitySchemes:
+    openId:
+      type: openIdConnect
+      openIdConnectUrl: https://text-storage-dev.auth0.com/.well-known/openid-configuration
+    oauth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://text-storage-dev.auth0.com/oauth/token
+          scopes: {}
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
+    Error:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          oneOf:
+            - type: string
+            - type: array
+
     TextFragment:
       type: object
       required:
         - text
         - author
-        - source
       properties:
         text:
           type: string
@@ -38,7 +116,14 @@ components:
           description: The author of the text fragment
         source:
           type: string
+          default: "Source not stated"
           description: The source of the text fragment
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags associated with the text fragment
+
     TextFragmentResponse:
       type: object
       properties:
@@ -54,7 +139,20 @@ components:
         source:
           type: string
           description: The source of the text fragment
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags associated with the text fragment
         created_at:
           type: string
           format: date-time
           description: Timestamp when the text fragment was stored
+
+security:
+  - oauth2:
+      - storeText
+      - retrieveText
+  - bearerAuth:
+      - storeText
+      - retrieveText
